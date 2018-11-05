@@ -96,8 +96,40 @@ prove {xs = xs} s t =
   ∎
 
 private
-  example : ∀ {a b c}
-          → {f : Morphism a b} {g : Morphism b c}
-          → (id >>> f) >>> (g >>> id) ≡ f >>> id >>> g
-  example = prove (([id] [>>>] −) [>>>] (− [>>>] [id]))
-                  (− [>>>] [id] [>>>] −)
+  example1 : ∀ {a b c}
+           → {f : Morphism a b} {g : Morphism b c}
+           → (id >>> f) >>> (g >>> id) ≡ f >>> id >>> g
+  example1 = prove (([id] [>>>] −) [>>>] (− [>>>] [id]))
+                   (− [>>>] [id] [>>>] −)
+
+
+data Group : ∀ a b → MorphismVec a b → Set where
+  zero : ∀ {a} → Group a a []
+  suc  : ∀ {a b c xs}
+       → {x : Morphism a b}
+       → Group b c xs
+       → Group a c (x ∷ xs)
+
+group~>nat : ∀ {a b xs} → Group a b xs → ℕ
+group~>nat zero    = zero
+group~>nat (suc g) = suc (group~>nat g)
+
+group~>shape : ∀ {a b xs} → Group a b xs → Shape a b xs
+group~>shape zero       = [id]
+group~>shape (suc zero) = −
+group~>shape (suc g)    = − [>>>] group~>shape g
+
+group : ∀ {a b xs}
+      → {g : Group a b xs}
+      → (n : ℕ)
+      → group~>nat g ≡ n
+      → Shape a b xs
+group {g = g} _ _ = group~>shape g
+
+private
+  example2 : ∀ {a b c d e}
+           → {f : Morphism a b} {g : Morphism b c} {h : Morphism c d} {i : Morphism d e}
+           → f >>> g >>> h >>> i
+           ≡ (f >>> g) >>> (h >>> i)
+  example2 = prove (group 4 refl)
+                   (group 2 refl [>>>] group 2 refl)
