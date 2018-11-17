@@ -23,8 +23,8 @@ The goal of this repo is to model the following classes of categories, and for e
 ### Progress
   
 1.  Plain category
-    1. [ ] model
-    1. [ ] suitable representation
+    1. [x] model
+    1. [x] suitable representation
     1. [ ] free enough
 1.  Premonoidal category
     1. [ ] model
