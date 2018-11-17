@@ -9,12 +9,14 @@ A repository of Agda proofs which will help me to finish one of my Haskell libra
 *   [Why?](#why)
     *   [Monoidal hierarchy](#monoidal-hierarchy)
     *   [Premonoidal hierarchy](#premonoidal-hierarchy)
+    *   [Binoidal categories](#binoidal-categories)
 
 ## What?
 
 The goal of this repo is to model the following classes of categories, and for each category class `C`, to find a suitable representation for a free `C`. Finally, I also want to prove that this representation is free enough.
 
 1. Plain category
+1. Binoidal category
 1. Premonoidal category
 1. Symmetric premonoidal category
 1. Semicartesian premonoidal category
@@ -25,6 +27,10 @@ The goal of this repo is to model the following classes of categories, and for e
 1.  Plain category
     1. [x] model
     1. [x] suitable representation
+    1. [ ] free enough
+1.  Binoidal category
+    1. [x] model
+    1. [ ] suitable representation
     1. [ ] free enough
 1.  Premonoidal category
     1. [ ] model
@@ -204,6 +210,7 @@ In a monoidal category, one of the laws which hold is that `first f >>> second g
 So instead of the above hierarchy of well-known category classes, I must instead use the much less well-known hierarchy I gave in the "What" section:
 
 1. Plain category
+1. Binoidal category
 1. Premonoidal category
 1. Symmetric premonoidal category
 1. Semicartesian premonoidal category
@@ -222,3 +229,45 @@ The restrictions and the example diagrams are the same as for their monoidal cou
 Whereas in a premonoidal category, the middle diagram is disallowed, and the remaining diagrams are not considered equivalent.
 
 Since the premonoidal hierarchy is less well-known than the monoidal hierarchy, I am not sure if I'll find reference material defining all the laws which must hold in each class of categories. So the first step is to carefully model those category classes, by adapting the definitions from their more well-known monoidal counterparts, making sure to only encode the laws which are still valid in the premonoidal setting. Then, I will come up with data type definitions in the style of `FreePremonoidalCategory` above, and then prove that these definitions are free enough. If so, I will then use those data type definitions in category-syntax.
+
+### Binoidal categories
+
+The premonoidal hierarchy has one more level than the monoidal hierarchy: binoidal categories. There is no theoretical reason for that inconsistency, it just happens that the monoidal equivalent to a binoidal category, which I would call a "bifunctorial category", is pretty much never used and so I could not find an existing name for it. It is, however, easy to define: just like a monoidal category, a bifunctorial category is a category equipped with a bifunctor named "tensor". Unlike a monoidal category, however, the definition stops there, we do not also postulate the existence of morphisms witnessing the associativity of the tensor, nor the existence of an identity object.
+
+In terms of string diagrams, this restricts which strings we are allowed to attach to one another. I like to imagine strings being surrounded by tubes, and so if new strings are created inside a tube, they can interact with each other, but they cannot interact with anything outside of their tube.
+
+                                             A                 BCD
+                                            (|)                (|)
+                                           ( | )               (f)
+                                          (  |  )             (/ \)
+                                          (  |  )            (/) (\)
+                                          (  |  )           (/)   (\)
+                                          (  |  )          (/)     (\)
+                                          (  |  )         (/)       (\)
+                                          (  |  )        (/)         (\)
+                                          (  |  )       (|)           (|)
+                                          (  |  )      ( | )         ( | )
+                                          (  |  )     (  |  )       (  |  )
+                                          (  |  )     (  |  )      (   |   )
+                                          (  |  )     (  |  )     (    |    )
+        do (a, bcd) <- getInput           (  |  )     (  |  )    (     g     )
+           (b, cd) <- f bcd               (  |  )     (  |  )    (   (/ \)   )
+           (c, d) <- g cd                 (  |  )     (  |  )    (  (|) (|)  )
+           cd' <- h (c, d)                (  |  )     (  |  )    (   (\ /)   )
+           bcd' <- i (b, cd')             (  |  )     (  |  )    (     h     )
+           returnC (a, bcd')              (  |  )     (  |  )     (    |    )
+                                          (  |  )     (  |  )      (   |   )
+                                          (  |  )     (  |  )       (  |  )
+                                          (  |  )      ( | )         ( | )
+                                          (  |  )       (|)           (|)
+                                          (  |  )        (\)         (/)
+                                          (  |  )         (\)       (/)
+                                          (  |  )          (\)     (/)
+                                          (  |  )           (\)   (/)
+                                          (  |  )            (\) (/)
+                                          (  |  )             (\ /)
+                                           ( | )               (i)
+                                            (|)                (|)
+                                             A                 BCD'
+
+I don't expect binoidal categories to be much more useful than bifunctorial categories, but they are certainly simpler to model than premonoidal categories. This is why I include them in my plan: I want to proceed in small increments. I have not yet decided whether I want to include them in category-syntax.
