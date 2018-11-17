@@ -1,5 +1,5 @@
 -- We can't use Monoid-solver because Morphism has type Object → Object → Set, not Set.
-module Category-solver where
+module Category.Solver where
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Nat using (ℕ; zero; suc; _+_)
