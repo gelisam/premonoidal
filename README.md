@@ -2,7 +2,7 @@
 
 A repository of Agda proofs which will help me to finish one of my Haskell libraries, [category-syntax](https://github.com/gelisam/category-syntax#readme).
 
-Tested with Agda-2.5.4.2 and agda-stdlib-0.14.
+Tested with Agda-2.5.4.2 and agda-stdlib-0.17.
 
 *   [What?](#what)
     *   [Progress](#progress)
