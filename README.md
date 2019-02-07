@@ -57,7 +57,7 @@ By "suitable representation", I mean one which can be implemented in Haskell and
 
     data EasyFreeCategory k a b where
       EasyFreeCategory
-        :: forall k. Category c
+        :: forall c. Category c
         => (forall x y. k x y -> c x y)
         -> c a b
         -> EasyFreeCategory k a b
