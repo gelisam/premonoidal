@@ -57,9 +57,10 @@ By "suitable representation", I mean one which can be implemented in Haskell and
 
     data EasyFreeCategory k a b where
       EasyFreeCategory
-        :: forall c. Category c
-        => (forall x y. k x y -> c x y)
-        -> c a b
+        :: ( forall c. Category c
+          => (forall x y. k x y -> c x y)
+          -> c a b
+           )
         -> EasyFreeCategory k a b
 
 This is technically a free `Category`: for example, `EasyFreeCategory (\_ -> id >>> id)` is equivalent to `EasyFreeCategory (\_ -> id)` because I'm only allowed to observe any differences by instantiating `c` to a type which has a valid `Category` instance, and thus for which `id >>> id = id`. But we learn nothing about free categories by looking at this definition. By contrast, consider the following definition:
