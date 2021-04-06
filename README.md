@@ -66,7 +66,7 @@ The same technique should work there too, but it's a lot less obvious which cano
 
 ## Canonical Representative vs Free Category
 
-I used to frame the problem as "find a free representation for premonoidal categories", but the problem with that statement is that it has an easy solution which works with any typeclass:
+I used to frame the problem as "define a free premonoidal category", but the problem with that statement is that it has an easy solution which works with any typeclass:
 
     data EasyFreeCategory k a b where
       EasyFreeCategory
