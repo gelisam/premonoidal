@@ -1,59 +1,72 @@
 # Premonoidal
 
-A repository of Agda proofs which will help me to finish one of my Haskell libraries, [category-syntax](https://github.com/gelisam/category-syntax#readme).
+I want to constructively define a canonical representative for each equivalence class in a {,symmetric,semicartesian,cartesian} premonoidal category.
+
+In Agda (this project), this makes it possible to define solvers which automatically prove that equivalent expressions (expressions in the same equivalence class) are equal.
+
+In Haskell (my [category-syntax](https://github.com/gelisam/category-syntax#readme) project), this makes it easier to generate code which requires the minimal number of typeclasses.
 
 Tested with Agda-2.6.1.1 and agda-stdlib-1.4.
 
-*   [What?](#what)
-    *   [Progress](#progress)
-    *   ["Suitable representation"](#suitable-representation)
-    *   ["Free enough"](#free-enough)
-*   [Why?](#why)
-    *   [Monoidal hierarchy](#monoidal-hierarchy)
-    *   [Premonoidal hierarchy](#premonoidal-hierarchy)
-    *   [Binoidal categories](#binoidal-categories)
+* [Canonical Representatives and Solvers](#canonical-representatives-and-solvers)
+* [Canonical Representative vs Free Category](#canonical-representative-vs-free-category)
+* [Monoidal Categories vs Premonoidal Categories](#monoidal-categories-vs-premonoidal-categories)
+* [Premonoidal Hierarchy](#premonoidal-hierarchy)
 
-## What?
+## Canonical Representatives and Solvers
 
-The goal of this repo is to model the following classes of categories, and for each category class `C`, to find a suitable representation for a free `C`. Finally, I also want to prove that this representation is free enough.
+The following equation holds in any category:
 
-1. Plain category
-1. Binoidal category
+    (id >>> f) >>> (g >>> id)   ≡   f >>> id >>> g
+
+My [category solver](src/Category/Solver.agda) can automatically prove that equation. That page explains the technique in details, but one key step is to transform both of those sides into a canonical representation, `f >>> (g >>> id)`.
+
+Similarly, there are some equations which hold in any [symmetric premonoidal category](#symmetric-premonoidal-categories):
+
+         a  (b  (c   d))                    a  (b  (c  d))
+         |   |   |   |                      |   |   |  |
+         |   |    \ /                       | ( |  (|  |))
+         |   |     X                        | ((|   |) | )
+         |   |    / \                       |    \ /   |
+         |  (|  (|   |))                    |     X    |
+        (|   |) (|   |)                     |    / \   |
+          \ /    |   |                      | ((|   |) | )
+          +-+    |   |                      | ( |  (|  |))
+          |f|    |   |                     (|   |) (|  |)
+          +-+    |   |                       \ /    |  |
+           |      \ /           ≡             x     |  |
+           |       X                         / \    |  |
+           |      / \                      (|   |) (|  |)
+           |    (|   |)                     | ( |  (|  |))
+          (|     |)  |                      | ((|   |) | )
+            \   /    |                      |    \ /   |
+             \ /     |                      |    +-+   |
+              X      |                      |    |f|   |
+             / \    |                       |    +-+   |
+           (|   |) |                        |     |    |
+            |  (|  |)                       |     |    |
+            |   |  |                        |     |    |
+            c  (e  d)                       c    (e    d)
+
+        second (second swap)               second (sym reassoc)
+    >>> sym reassoc                    >>> second (first swap)
+    >>> first f                        >>> second reassoc
+    >>> second swap             ≡      >>> sym reassoc
+    >>> sym reassoc                    >>> first swap
+    >>> first swap                     >>> reassoc
+    >>> reassoc                        >>> second (sym reassoc)
+                                       >>> second (first f)
+
+The same technique should work there too, but it's a lot less obvious which canonical representation we should pick. The goal of this repo is to figure out how to define such a canonical representation for the following classes of categories:
+
 1. Premonoidal category
 1. Symmetric premonoidal category
 1. Semicartesian premonoidal category
 1. Cartesian premonoidal category
 
-### Progress
-  
-1.  Plain category
-    1. [x] model
-    1. [x] suitable representation
-    1. [ ] free enough
-1.  Binoidal category
-    1. [x] model
-    1. [ ] suitable representation
-    1. [ ] free enough
-1.  Premonoidal category
-    1. [ ] model
-    1. [ ] suitable representation
-    1. [ ] free enough
-1.  Symmetric premonoidal category
-    1. [ ] model
-    1. [ ] suitable representation
-    1. [ ] free enough
-1.  Semicartesian premonoidal category
-    1. [ ] model
-    1. [ ] suitable representation
-    1. [ ] free enough
-1.  Cartesian premonoidal category
-    1. [ ] model
-    1. [ ] suitable representation
-    1. [ ] free enough
+## Canonical Representative vs Free Category
 
-### "Suitable representation"
-
-By "suitable representation", I mean one which can be implemented in Haskell and which uses constructors and type parameter constraints in order to make sure that there is only one value for each equivalence class of morphisms. I mention this because there is an easy way to define a free `C` using functions constrained by a `C` typeclass, but this easy definition does not suit my purpose. Here is that easy definition for a free `Category`:
+I used to frame the problem as "find a free representation for premonoidal categories", but the problem with that statement is that it has an easy solution which works with any typeclass:
 
     data EasyFreeCategory k a b where
       EasyFreeCategory
@@ -71,206 +84,132 @@ This is technically a free `Category`: for example, `EasyFreeCategory (\_ -> id 
            -> FreeCategory k b c
            -> FreeCategory k a c
 
-It is less obvious that this definition is indeed a free `Category`, which is why I want to write a proof in order to make sure. But assuming that this definition is correct, this time we learn a lot more: we learn that the free `Category` is very similar to a list, the free `Monoid`. Knowing this is very helpful, e.g. given an equality decider for `k`, we can now write an equality decider for `FreeCategory k`.
+This definition gives a lot more insight into the structure of the free category: clearly, it has the same structure as a list, and so we can probably apply similar kinds of transformations to it. Each value of type `FreeCategory`, e.g. `Cons f (Cons g Nil)`, also corresponds to an obvious canonical element in the equivalence class it represents, in this case `f >>> (g >>> id)`. Thus, the new way in which I am phrasing the problem is: "find a canonical representative for each equivalence class in a premonoidal category".
 
-For two category classes `C1` and `C2` which are consecutive in the above list, I want to write an algorithm determining whether a given morphism in `FreeC2` can be encoded in `FreeC1` as well. This will allow category-syntax to generate code in the least powerful category in which the input program can be expressed.
+## Monoidal Categories vs Premonoidal Categories
 
-### "Free enough"
+Solvers are pretty cool, but why am I interested in writing a solver for _premonoidal_ categories? Wouldn't it make more sense to write a solver for _monoidal_ categories, which are a lot more commonly-discussed?
 
-If `C` demands that two expressions e.g. `(f >>> g) >>> h` and `f >>> (g >>> h)` must be equal, then if `f`, `g` and `h` are all `FreeC k` values, I would like `(f >>> g) >>> h` and `f >>> (g >>> h)` to normalize to the same `FreeC k` value. Sounds straightforward, but consider the following attempt:
+Well, my primary motivation isn't solvers, but my Haskell project [category-syntax](https://github.com/gelisam/category-syntax#readme). That project takes a pointful computation expressed using a variant of the Arrow notation, e.g.
 
-    data Tree a xs where
-      Leaf   :: Tree a [a]
-      Branch :: Tree a as
-             -> Tree b bs
-             -> Tree (a, b) (as ++ bs)
+    expr = proc (a, (b, (c, d))) -> do
+      e <- f -< (a, b)
+      returnC (c, (e, d))
 
-    data Step k a b where
-      Step :: Tree xay (xs ++ as ++ ys)
-           -> Tree a as
-           -> k a b
-           -> Tree b bs
-           -> Tree xby (xs ++ bs ++ ys)
-           -> Step k xay xby
+and converts it into a pointfree expression which rearranges its variables using a number of methods like `swap` and `reassoc`:
 
-    data FreePremonoidalCategory k a b where
-      Nil  :: Tree a xs
-           -> Tree b xs
-           -> FreePremonoidalCategory k a b
-      Cons :: Step k a b
-           -> FreePremonoidalCategory k b c
-           -> FreePremonoidalCategory k a c
+    expr :: forall k. Symmetric k
+         => k (a, b) e
+         -> k (a, (b, (c, d))) (c, e, d)
+    expr f
+       -- (a, (b, (c, d)))
+        = reassocL
+       -- ((a, b), (c, d))
+      >>> first f
+       -- (e, (c, d))
+      >>> reassocL
+       -- ((e, c), d)
+      >>> first swap
+       -- ((c, e), d)
+      >>> reassocR
+       -- (c, (e, d))
 
-The idea behind `Tree a xs` is to capture the idea that the parentheses don't matter. For example, the types `((a, b), c)` and `(a, (b, c))` only differ in the placement of the parentheses, and so there are two `Tree`s
+The difference between monoidal and premonoidal categories is that in a monoidal category, the following law must hold.
 
-    Branch (Branch Leaf Leaf) Leaf :: Tree ((a, b), c) [a,b,c]
-    Branch Leaf (Branch Leaf Leaf) :: Tree (a, (b, c)) [a,b,c]
+            |   |             |   |             |   |
+           +-+  |             |   |             |  +-+
+           |f|  |            +-+ +-+            |  |g|
+           +-+ +-+        =  |f| |g|  =        +-+ +-+
+            |  |g|           +-+ +-+           |f|  |
+            |  +-+            |   |            +-+  |
+            |   |             |   |             |   |
 
-relating them by showing that they both contain the list of types `[a,b,c]`. I can then use those `Tree`s as arguments to `Nil` to construct a morphism which goes from one type to the other without applying any `k`-morphism.
+    first f >>> second g  =  f *** g  =  second g >>> first f
 
-There are two problems with the above attempt. The first is that there are multiple ways to represent the identity morphism over the type `(a, b)`: we could use `Nil Leaf Leaf`, or we could use `Nil (Branch Leaf Leaf) (Branch Leaf Leaf)`. It might be possible to forbid the first one by insisting that `Nil` may only be used on non-product types, but that would make it tricky to write polymorphic code, and so I prefer to allow this ambiguity. This is why I only want to prove that my representation is free "enough".
+That is, if two operations apply to different portions of the input, then in a monoidal category, it doesn't matter in which order the operations are applied, whereas in a premonoidal category, the order can be important.
 
-The other issue is more problematic. Every step may arbitrarily rearrange its parentheses in order to get the inputs of `k a b` in the right format, which is good, but the parts of `xay` which aren't fed to `k a b` may also be unnecessarily arranged, which means that there is more than one way to represent a given composition of `k`-morphisms.
+Since the Arrow notation requires users to specify their operations one at a time, in order, I would like to allow my users to instantiate `k` to a type like `Kleisli IO`, in which that order is important because it specifies the order in which the side-effects occur. One alternative to that is Conal Elliott's [Compiling to Categories](http://conal.net/papers/compiling-to-categories/) approach, in which the input syntax is a lambda expression, which doesn't specify an order. With that syntax, monoidal categories would make more sense, but there are fewer types at which `k` could be instantiated.
 
-Since I want to allow more than one representation in one case but not in the other, I will have to find a way to define the difference more formally in order to prove that my data type definitions are free enough.
+## Premonoidal Hierarchy
 
-## Why?
+Here's another string diagram.
 
-In category-syntax, I want to interpret a do-notation block into an arbitrary category. The Category typeclass is only expressive enough to encode composition, so depending on what happens within that do-notation block, some extra typeclasses will be required.
+    a   b    c
+    |   |    |
+     \ /     | 
+     +-+     |
+     |f|     |
+     +-+     |
+      |      |
+      e      |
+      |     / \
+       \   /   |
+        \ /    |
+         X     c
+        / \    |
+       |   |  +-+
+       |   |  |g|
+       |   |  +-+
+       |   |   |
+       |   |   d
+       |   |   |
+       |   |   .
+       |   |
+       c   e
 
-### Monoidal hierarchy
 
-Originally, I was planning to model those extra typeclasses on well-known classes of categories:
+Note how the `c` and `e` wires cross, how the `c` wire splits into two `c` wires, and how the `d` wire ends before reaching the output.
 
-1.  A plain category if the output of each step in the do-notation block is directly given to the next step, and then never used again. This leads to a string diagram consisting of a straight line. For example:
+In a free premonoidal category, the wires are not allowed to do any of that.
 
-                              A
-                              |
-        do a <- getInput      f
-           b <- f a           |
-           c <- g b           g
-           d <- h c           |
-           returnC d          h
-                              |
-                              D
+In a free symmetric premonoidal category, they are allowed to cross.
 
-1.  A monoidal category if some steps produce a tuple of values, each of which is used exactly once, which can be used to draw a string diagram in which the strings never cross. For example:
+In a free semicartesian premonoidal category, they are also allowed to end before reaching the output.
 
-                                          A    BC  Z  D
-                                          |    |   |  |
-        do (a, bc, z, d) <- getInput      |    f   |  |
-           (b, c) <- f bc                 |   / \  g  |
-           () <- g z                      |  |   \   /
-           cd <- h (c, d)                 |  |    \ /
-           returnC (a, b, cd)             |  |     h
-                                          |  |     |
-                                          A  B     CD
+In a free cartesian premonoidal category, they are also allowed to split in two.
 
-1.  A symmetric monoidal category if the strings do cross. In this model, every variable is a linear resource, which must be used exactly once. For example:
+That is, each of the classes of premonoidal categories I am interested in is strictly more expressive than the previous one. In category-syntax, I model this as a tower of typeclasses, each of which adds a new method, e.g. `Cartesian` adds `dup :: k a (a, a)` for splitting wires, which corresponds to using a variable more than once. I want to generate pointfree code which uses the least-expressive typeclass possible, so that the `k` can be instantiated to as many types as possible. That is, I prefer to output this:
 
-                                            CB  Z  D  A
-                                            |   |  |  |
-                                            f   |  |  |
-                                           / \  |  |  |
-                                           \  | |  |  |
-        do (cb, z, d, a) <- getInput        \ | g  | /
-           (c, b) <- f cb                    \|    |/
-           () <- g z                          |\  /|
-           cd <- h (c, d)                     | \/ |
-           returnC (a, b, cd)                 | /\ |
-                                              |/  \|
-                                             /|    h
-                                            | |    |
-                                            A B    CD
+    expr :: forall k. Symmetric k
+         => k (a, b) e
+         -> k (a, (b, (c, d))) (c, e, d)
+    expr f
+       -- (a, (b, (c, d)))
+        = reassocL
+       -- ((a, b), (c, d))
+      >>> first f
+       -- (e, (c, d))
+      >>> reassocL
+       -- ((e, c), d)
+      >>> first swap
+       -- ((c, e), d)
+      >>> reassocR
+       -- (c, (e, d))
 
-1.  A semicartesian monoidal category if some of the variables are unused, leading to a string diagram in which some of the lines stop before reaching the output. In this model, every variable is an affine resource, which can be used at most once. For example:
+than to output that:
 
-                                           CB  Z  D  A
-                                           |   |  |  |
-                                           f   |  |  |
-                                          / \  |  |  |
-                                          \  | |  |  |
-        do (cb, z, d, a) <- getInput       \ | .  | /
-           (c, b) <- f cb                   \|    |/
-           cd <- h (c, d)                    |\  /|
-           returnC (a, b, cd)                | \/ |
-                                             | /\ |
-                                             |/  \|
-                                            /|    h
-                                           | |    |
-                                           A B    CD
+    expr :: forall k. Cartesian k
+         => k (a, b) e
+         -> k (a, (b, (c, d))) (c, e, d)
+    expr f
+       -- (a, (b, (c, d)))
+        = first dup
+      >>> ((a, a), (b, (c, d)))
+        = reassocR
+       -- (a,  (a, (b, (c, d))))
+      >>> second (second (first dup))
+       -- (a,  (a, (b, ((c, c), d))))
+      >>> ...
+       -- ((a, c),  (a, (b, (c, d))))
+      >>> first f
+       -- (e, (a, (b, (c, d))))
+      >>> ...
+       -- ((c, (e, d)),  (e, (a, (b, (c, d)))))
+      >>> fst
+       -- (c, (e, d))
 
-1.  A cartesian category if some of the variables are used more than once, leading to a string diagram in which some of the lines fork. In this model, variables can be used as many times as needed, including zero times. For example:
+However, I don't want to write four different code-generation algorithms! I would prefer to output the `Cartesian` version, and then attempt to simplify it to a version which only requires the Semicartesian typeclass, then only Symmetric, then only Premonoidal, then only Category; stopping at some point along the way, when further simplification is not possible.
 
-                                            CB  Z  D  A
-                                            |   |  |  |
-                                            |   |  |  *
-                                            |   |  | /|
-                                            |   .  |/ |
-                                            |     /|  |
-                                            |    / |  |
-                                            |   /  |  |
-                                            |  /   |  |
-                                            | /    |  |
-        do (cb, z, d, a) <- getInput        |/     |  |
-           (c, b) <- f (cb, a)              f      |  |
-           cd <- h (c, d)                  / \     |  |
-           returnC (a, b, cd)              \  |    |  |
-                                            \ |    | /
-                                             \|    |/
-                                              |\  /|
-                                              | \/ |
-                                              | /\ |
-                                              |/  \|
-                                             /|    h
-                                            | |    |
-                                            A B    CD
+That's why I am looking for canonical representatives. First, find the representatives. Then, use them to define types like `FreeSymmetric`, `FreeSemicartesian` etc. in the style of `FreeCategory`, not `EasyFreeCategory`. With that style, I can pattern-match on the construction in order to attempt to simplify it to the next free construction, and then the next, etc. Then generate the code.
 
-### Premonoidal hierarchy
-
-In a monoidal category, one of the laws which hold is that `first f >>> second g` = `f *** g` = `second g >>> first f`. This law does not hold for `Kleisli IO`, because in `first f >>> second g`, the side-effects of `f` occur first, whereas in `second g >>> first f`, they occur last. This means that `Kleisli IO` is not a monoidal category. So if I want to be able to use category-syntax's linear resource semantics to e.g. guarantee that we don't write to a linear file handle after we've closed it, I won't be able to instantiate such a guaranteed-correct block to IO in order to run it on an actual file. This does not work at all.
-
-So instead of the above hierarchy of well-known category classes, I must instead use the much less well-known hierarchy I gave in the "What" section:
-
-1. Plain category
-1. Binoidal category
-1. Premonoidal category
-1. Symmetric premonoidal category
-1. Semicartesian premonoidal category
-1. Cartesian premonoidal category
-
-The restrictions and the example diagrams are the same as for their monoidal counterparts. The interpretation of those diagrams is the same, too. The only difference is that fewer laws apply in premonoidal categories than in monoidal categories, and so this affects which pairs of diagrams are considered equivalent. In a monoidal monoidal category, we can freely slide morphisms along their edges, so those three diagrams are equivalent:
-
-    A  B        A  B        A  B
-    |  |        |  |        |  |
-    f  |        |  |        |  g
-    |  |        f  g        |  |
-    |  g        |  |        f  |
-    |  |        |  |        |  |
-    A  B        A  B        A  B
-
-Whereas in a premonoidal category, the middle diagram is disallowed, and the remaining diagrams are not considered equivalent.
-
-Since the premonoidal hierarchy is less well-known than the monoidal hierarchy, I am not sure if I'll find reference material defining all the laws which must hold in each class of categories. So the first step is to carefully model those category classes, by adapting the definitions from their more well-known monoidal counterparts, making sure to only encode the laws which are still valid in the premonoidal setting. Then, I will come up with data type definitions in the style of `FreePremonoidalCategory` above, and then prove that these definitions are free enough. If so, I will then use those data type definitions in category-syntax.
-
-### Binoidal categories
-
-The premonoidal hierarchy has one more level than the monoidal hierarchy: binoidal categories. There is no theoretical reason for that inconsistency, it just happens that the monoidal equivalent to a binoidal category, which I would call a "bifunctorial category", is pretty much never used and so I could not find an existing name for it. It is, however, easy to define: just like a monoidal category, a bifunctorial category is a category equipped with a bifunctor named "tensor". Unlike a monoidal category, however, the definition stops there, we do not also postulate the existence of morphisms witnessing the associativity of the tensor, nor the existence of an identity object.
-
-In terms of string diagrams, this restricts which strings we are allowed to attach to one another. I like to imagine strings being surrounded by tubes, and so if new strings are created inside a tube, they can interact with each other, but they cannot interact with anything outside of their tube.
-
-                                             A                 BCD
-                                            (|)                (|)
-                                           ( | )               (f)
-                                          (  |  )             (/ \)
-                                          (  |  )            (/) (\)
-                                          (  |  )           (/)   (\)
-                                          (  |  )          (/)     (\)
-                                          (  |  )         (/)       (\)
-                                          (  |  )        (/)         (\)
-                                          (  |  )       (|)           (|)
-                                          (  |  )      ( | )         ( | )
-                                          (  |  )     (  |  )       (  |  )
-                                          (  |  )     (  |  )      (   |   )
-                                          (  |  )     (  |  )     (    |    )
-        do (a, bcd) <- getInput           (  |  )     (  |  )    (     g     )
-           (b, cd) <- f bcd               (  |  )     (  |  )    (   (/ \)   )
-           (c, d) <- g cd                 (  |  )     (  |  )    (  (|) (|)  )
-           cd' <- h (c, d)                (  |  )     (  |  )    (   (\ /)   )
-           bcd' <- i (b, cd')             (  |  )     (  |  )    (     h     )
-           returnC (a, bcd')              (  |  )     (  |  )     (    |    )
-                                          (  |  )     (  |  )      (   |   )
-                                          (  |  )     (  |  )       (  |  )
-                                          (  |  )      ( | )         ( | )
-                                          (  |  )       (|)           (|)
-                                          (  |  )        (\)         (/)
-                                          (  |  )         (\)       (/)
-                                          (  |  )          (\)     (/)
-                                          (  |  )           (\)   (/)
-                                          (  |  )            (\) (/)
-                                          (  |  )             (\ /)
-                                           ( | )               (i)
-                                            (|)                (|)
-                                             A                 BCD'
-
-I don't expect binoidal categories to be much more useful than bifunctorial categories, but they are certainly simpler to model than premonoidal categories. This is why I include them in my plan: I want to proceed in small increments. I have not yet decided whether I want to include them in category-syntax.
+That being said, I've been working on this for years, so maybe I should just give up and write four code-generation algorithms? Probably, but it's not the destination which counts, it's the lemmas you prove along the way ;)
