@@ -4,15 +4,45 @@ open import Data.Nat
 open import Data.List
 
 
-module _ (K : Set)
-         (Q : List K → List K → Set)
+module _ (X : Set)
+         (Q : List X → List X → Set)
          where
-  data Free : List K → List K → Set where
+  data Free : List X → List X → Set where
     zero
-      : ∀ {i}
-      → Free i i
+      : ∀ {xs}
+      → Free xs xs
     suc
-      : ∀ {pre input output post j}
+      : ∀ {input output ys}
+      → (pre : List X)
       → Q input output
-      → Free (pre ++ output ++ post) j
-      → Free (pre ++ input ++ post) j
+      → (post : List X)
+      → Free (pre ++ output ++ post) ys
+      → Free (pre ++ input ++ post) ys
+
+  module _
+         (R : List X → List X → Set)
+         (id : ∀ {xs}
+             → R xs xs)
+         (_⟫_ : ∀ {xs ys zs}
+              → R xs ys
+              → R ys zs
+              → R xs zs)
+         (widen : ∀ {xs ys}
+                → (pre : List X)
+                → R xs ys
+                → (post : List X)
+                → R (pre ++ xs ++ post)
+                    (pre ++ ys ++ post))
+         (runQ : ∀ {xs ys}
+               → Q xs ys
+               → R xs ys)
+         where
+    runFree
+      : ∀ {xs ys}
+      → Free xs ys
+      → R xs ys
+    runFree zero
+      = id
+    runFree (suc pre q post qs)
+      = widen pre (runQ q) post
+      ⟫ runFree qs
