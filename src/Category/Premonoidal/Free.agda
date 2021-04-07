@@ -19,6 +19,19 @@ module _ (X : Set)
       → Free (pre ++ output ++ post) ys
       → Free (pre ++ input ++ post) ys
 
+  id : ∀ {xs}
+     → Free xs xs
+  id = zero
+
+  _⟫_ : ∀ {xs ys zs}
+      → Free xs ys
+      → Free ys zs
+      → Free xs zs
+  zero ⟫ rs
+    = rs
+  suc pre q post qs ⟫ rs
+    = suc pre q post (qs ⟫ rs)
+
   module _
          (R : List X → List X → Set)
          (id : ∀ {xs}
