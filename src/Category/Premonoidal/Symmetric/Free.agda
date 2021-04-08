@@ -45,6 +45,20 @@ module _ (X : Set)
       → Free (output ++ suffix) ys
       → Free xs ys
 
+  rearrange-id
+    : ∀ {xs}
+    → Rearrange xs xs
+  rearrange-id {[]}
+    = []
+  rearrange-id {_ ∷ _}
+    = here ∷ rearrange-id
+
+  id
+    : ∀ {xs}
+    → Free xs xs
+  id
+    = zero rearrange-id
+
   module _
          (R : List X → List X → Set)
          (id : ∀ {xs}
