@@ -1,6 +1,5 @@
 module Category.Premonoidal.Free where
 
-open import Data.Nat
 open import Data.List
 open import Data.List.Properties using (++-monoid)
 open import Relation.Binary.PropositionalEquality
