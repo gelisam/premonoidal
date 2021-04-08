@@ -2,6 +2,10 @@ module Category.Premonoidal.Free where
 
 open import Data.Nat
 open import Data.List
+open import Data.List.Properties using (++-monoid)
+open import Relation.Binary.PropositionalEquality
+
+open import Tactic.MonoidSolver using (solve)
 
 
 module _ (X : Set)
@@ -31,6 +35,30 @@ module _ (X : Set)
     = rs
   suc pre q post qs ⟫ rs
     = suc pre q post (qs ⟫ rs)
+
+  widen : ∀ {xs ys}
+        → (pre : List X)
+        → Free xs ys
+        → (post : List X)
+        → Free (pre ++ xs ++ post)
+               (pre ++ ys ++ post)
+  widen _ zero _
+    = zero
+  widen .{pre ++ input ++ post} .{ys}
+        pre-pre
+        (suc {input} {output} {ys} pre q post qs)
+        post-post
+    = subst (λ – → Free – _) (prf input)
+        (suc {input} {output}
+             {pre-pre ++ ys ++ post-post}
+             (pre-pre ++ pre) q (post ++ post-post)
+             (subst (λ – → Free – _) (sym (prf output))
+               (widen pre-pre qs post-post)))
+      where
+        prf : ∀ xs
+            → (pre-pre ++ pre) ++ xs ++ (post ++ post-post)
+            ≡ pre-pre ++ (pre ++ xs ++ post) ++ post-post
+        prf _ = solve (++-monoid X)
 
   module _
          (R : List X → List X → Set)
