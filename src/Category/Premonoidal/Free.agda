@@ -1,6 +1,6 @@
 module Category.Premonoidal.Free where
 
-import Category.SepBy
+import Category.Ski
 open import Data.List
 open import Data.List.Properties using (++-monoid)
 open import Data.Product
@@ -39,24 +39,21 @@ module _ (X : Set)
         ≡ pre-pre ++ (pre ++ a ++ post) ++ post-post
       prf = solve (++-monoid X)
 
-  open Category.SepBy _≡_ Apply _≡_
-    renaming (SepBy to Free)
+  open Category.Ski Apply _≡_
+    renaming (Ski to Free)
 
-  propagate : ∀ {a b c z}
+  propagate : ∀ {a b z}
             → a ≡ b
-            → b ≡ c
-            → Apply c z
+            → Apply b z
             → ∃ λ b′
-            → ∃ λ c′
-            → a ≡ b′
-            × Apply b′ c′
-            × c′ ≡ z
-  propagate refl refl a-az
-    = _ , _ , refl , a-az , refl
+            → Apply a b′
+            × b′ ≡ z
+  propagate refl a-az
+    = _ , a-az , refl
 
-  open SepBy-Properties refl trans propagate
-    renaming ( id-SepBy to id-Free
-             ; compose-SepBy to compose-Free
+  open Ski-Properties refl trans propagate
+    renaming ( id-Ski to id-Free
+             ; compose-Ski to compose-Free
              )
 
   widen-Free : ∀ {a b}
@@ -67,9 +64,8 @@ module _ (X : Set)
                     (pre ++ b ++ post)
   widen-Free _ (zero refl) _
     = zero refl
-  widen-Free pre (suc refl a-ab f-bz) post
-    = suc refl
-          (widen-Apply pre a-ab post)
+  widen-Free pre (suc a-ab f-bz) post
+    = suc (widen-Apply pre a-ab post)
           (widen-Free pre f-bz post)
 
   module _
@@ -113,8 +109,7 @@ module _ (X : Set)
       → Free a b
       → R a b
     runFree
-      = runSepBy
+      = runSki
           compose-R
-          runEq
           runApply
           runEq
