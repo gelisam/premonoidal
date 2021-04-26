@@ -195,3 +195,52 @@ module StringDiagram-Properties
                     (b ++ a)
   swap-StringDiagram a b
     = zero (swap-Rearranging a b)
+
+module _
+       {R : List X → List X → Set}
+       (compose-R : ∀ {a b c}
+                  → R a b
+                  → R b c
+                  → R a c)
+       (let infixr 5 _⟫_; _⟫_ = compose-R)
+       (widen-R : ∀ {a b}
+                → (pre : List X)
+                → R a b
+                → (post : List X)
+                → R (pre ++ a ++ post)
+                    (pre ++ b ++ post))
+       (runFocusing : ∀ {a input leftover}
+                    → Focusing a input leftover
+                    → R a (input ++ leftover))
+       (runQ : ∀ {a b}
+             → Q a b
+             → R a b)
+       where
+  runApply
+    : ∀ {a b}
+    → Apply a b
+    → R a b
+  runApply (apply f-ail q)
+    = runFocusing f-ail
+    ⟫ widen-R [] (runQ q) _
+
+  runRearranging
+    : ∀ {a b}
+    → Rearranging a b
+    → R a b
+  runRearranging r-ab
+    = subst (λ – → R _ –) prf
+        (runFocusing r-ab)
+    where
+      prf : ∀ {a} → a ++ [] ≡ a
+      prf = solve (++-monoid X)
+
+  runStringDiagram
+    : ∀ {a b}
+    → StringDiagram a b
+    → R a b
+  runStringDiagram
+    = runSki
+        compose-R
+        runApply
+        runRearranging
