@@ -95,12 +95,47 @@ module Category.Premonoidal.Symmetric.StringDiagram
                ; compose-Ski to compose-StringDiagram
                )
 
-    swap-StringDiagram
-      : ∀ a b
-      → StringDiagram (a ++ b)
-                      (b ++ a)
-    swap-StringDiagram a b
-      = zero (swap-Rearranging a b)
+    module _
+           ( f : List X → List X)
+           ( bump-Rearranging
+           : ∀ {a b}
+           → Rearranging a b
+           → Rearranging (f a) (f b)
+           )
+           ( bump-Focusing
+           : ∀ {a input leftover}
+           → Focusing a input leftover
+           → Focusing (f a) input (f leftover)
+           )
+           ( strong
+           : ∀ a b
+           → Rearranging (a ++ f b)
+                         (f (a ++ b))
+           )
+           where
+      bump-StringDiagram
+        : ∀ {a z}
+        → StringDiagram a z
+        → StringDiagram (f a) (f z)
+      bump-StringDiagram (zero r-az)
+        = zero (bump-Rearranging r-az)
+      bump-StringDiagram .{a} {z}
+                         (suc (apply {a} {input} {output} {leftover}
+                                     f-ail q)
+                              s-olz)
+        = let f-faifl : Focusing (f a) input (f leftover)
+              f-faifl = bump-Focusing f-ail
+
+              s-ofl-fol : StringDiagram (output ++ f leftover)
+                                        (f (output ++ leftover))
+              s-ofl-fol = zero (strong output leftover)
+
+              s-fol-fz : StringDiagram (f (output ++ leftover)) (f z)
+              s-fol-fz = bump-StringDiagram s-olz
+
+              s-ofl-fz : StringDiagram (output ++ f leftover) (f z)
+              s-ofl-fz = compose-StringDiagram s-ofl-fol s-fol-fz
+          in suc (apply f-faifl q) s-ofl-fz
 
     widen-StringDiagram
       : ∀ {a z}
@@ -109,68 +144,54 @@ module Category.Premonoidal.Symmetric.StringDiagram
       → (post : List X)
       → StringDiagram (pre ++ a ++ post)
                       (pre ++ z ++ post)
-    widen-StringDiagram pre (zero r-az) post
-      = zero (widen-Rearranging pre r-az post)
-    widen-StringDiagram pre
-                        (suc .{a} .{output ++ leftover} {z}
-                             (apply {a} {input} {output} {leftover}
-                                    f-ail
-                                    q)
-                             s-olz)
-                        post
-      = let f-pap-i-plp : Focusing (pre ++ a ++ post)
-                                   input
-                                   (pre ++ leftover ++ post)
-            f-pap-i-plp
-              = widen-Focusing pre f-ail post
+    widen-StringDiagram pre s-az post
+      = bump-StringDiagram f bump-Rearranging bump-Focusing strong s-az
+      where
+        f : List X → List X
+        f xs
+          = pre ++ xs ++ post
 
-            a-pap-oplp : Apply (pre ++ a ++ post)
-                               (output ++ pre ++ leftover ++ post)
-            a-pap-oplp
-              = apply f-pap-i-plp q
+        bump-Rearranging
+          : ∀ {a b}
+          → Rearranging a b
+          → Rearranging (pre ++ a ++ post)
+                        (pre ++ b ++ post)
+        bump-Rearranging r-ab
+          = widen-Rearranging pre r-ab post
 
-            prf1 : pre ++ (output ++ leftover) ++ post
-                 ≡ pre ++ output ++ leftover ++ post
-            prf1 = solve (++-monoid X)
+        bump-Focusing
+          : ∀ {a input leftover}
+          → Focusing a input leftover
+          → Focusing (pre ++ a ++ post)
+                     input
+                     (pre ++ leftover ++ post)
+        bump-Focusing f-ail
+          = widen-Focusing pre f-ail post
 
-            s-polp-pzp : StringDiagram (pre ++ output ++ leftover ++ post)
-                                       (pre ++ z ++ post)
-            s-polp-pzp
-              = subst (λ – → StringDiagram – _) prf1
-                  (widen-StringDiagram pre s-olz post)
+        strong
+          : ∀ a b
+          → Rearranging (a ++ (pre ++ b ++ post))
+                        (pre ++ (a ++ b) ++ post)
+        strong a b
+          = subst (λ – → Rearranging – (pre ++ (a ++ b) ++ post)) prf1
+          ( subst (λ – → Rearranging ([] ++ (a ++ pre) ++ (b ++ post)) –) prf2
+          ( widen-Rearranging [] (swap-Rearranging a pre) (b ++ post)))
+          where
+            prf1
+              : ([] ++ (a ++ pre) ++ (b ++ post))
+              ≡ (a ++ (pre ++ b ++ post))
+            prf1
+              = solve (++-monoid X)
 
-            r-op-po : Rearranging (output ++ pre)
-                                  (pre ++ output)
-            r-op-po
-              = swap-Rearranging output pre
+            prf2
+              : ([] ++ (pre ++ a) ++ (b ++ post))
+              ≡ (pre ++ (a ++ b) ++ post)
+            prf2
+              = solve (++-monoid X)
 
-            prf2 : (output ++ pre) ++ leftover ++ post
-                 ≡ output ++ pre ++ leftover ++ post
-            prf2 = solve (++-monoid X)
-
-            prf3 : (pre ++ output) ++ leftover ++ post
-                 ≡ pre ++ output ++ leftover ++ post
-            prf3 = solve (++-monoid X)
-
-            r-oplp-polp : Rearranging (output ++ pre ++ leftover ++ post)
-                                      (pre ++ output ++ leftover ++ post)
-            r-oplp-polp
-              = subst (λ – → Rearranging – (pre ++ output ++ leftover ++ post)) prf2
-              ( subst (λ – → Rearranging ((output ++ pre) ++ leftover ++ post) –) prf3
-              ( widen-Rearranging [] r-op-po (leftover ++ post)))
-
-            s-oplp-polp : StringDiagram (output ++ pre ++ leftover ++ post)
-                                        (pre ++ output ++ leftover ++ post)
-            s-oplp-polp
-              = zero r-oplp-polp
-
-            s-oplp-pzp : StringDiagram (output ++ pre ++ leftover ++ post)
-                                       (pre ++ z ++ post)
-            s-oplp-pzp
-              = compose-StringDiagram s-oplp-polp s-polp-pzp
-
-            s-pap-pzp : StringDiagram (pre ++ a ++ post)
-                                      (pre ++ z ++ post)
-            s-pap-pzp
-              = suc a-pap-oplp s-oplp-pzp
-        in s-pap-pzp
+    swap-StringDiagram
+      : ∀ a b
+      → StringDiagram (a ++ b)
+                      (b ++ a)
+    swap-StringDiagram a b
+      = zero (swap-Rearranging a b)

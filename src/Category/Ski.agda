@@ -25,13 +25,24 @@ module Ski-Properties
                       → Final a b
                       → Final b c
                       → Final a c)
-       (propagate : ∀ {a b c}
-                  → Final a b
-                  → Q b c
-                  → ∃ λ b′
-                  → Q a b′
-                  × Final b′ c)
+       (propagate-Q : ∀ {a b c}
+                    → Final a b
+                    → Q b c
+                    → ∃ λ b′
+                    → Q a b′
+                    × Final b′ c)
        where
+  propagate-Ski
+    : ∀ {a b z}
+    → Final a b
+    → Ski b z
+    → Ski a z
+  propagate-Ski f-ab (zero f-bz)
+    = zero (compose-Final f-ab f-bz)
+  propagate-Ski f-ab (suc q-bc s-cz)
+    = let _ , q-ab′ , f-b′c = propagate-Q f-ab q-bc
+      in suc q-ab′ (propagate-Ski f-b′c s-cz)
+
   id-Ski
     : ∀ {a}
     → Ski a a
@@ -43,11 +54,8 @@ module Ski-Properties
     → Ski a b
     → Ski b z
     → Ski a z
-  compose-Ski (zero f-ab) (zero f-bz)
-    = zero (compose-Final f-ab f-bz)
-  compose-Ski (zero f-ab) (suc q-bc s-cz)
-    = let _ , q-ab′ , f-b′c = propagate f-ab q-bc
-      in suc q-ab′ (compose-Ski (zero f-b′c) s-cz)
+  compose-Ski (zero f-ab) s-bz
+    = propagate-Ski f-ab s-bz
   compose-Ski (suc q-ab s-bc) s-cz
     = suc q-ab (compose-Ski s-bc s-cz)
 
