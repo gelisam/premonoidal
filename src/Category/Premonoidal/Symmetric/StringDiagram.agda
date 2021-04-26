@@ -1,9 +1,9 @@
-import Category.Ski
 open import Data.List
 open import Data.List.Properties using (++-monoid)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality
 
+import Category.Ski
 open import Tactic.MonoidSolver using (solve)
 
 
