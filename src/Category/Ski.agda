@@ -60,26 +60,26 @@ module Ski-Properties
   compose-Ski (suc q-ab s-bc) s-cz
     = suc q-ab (compose-Ski s-bc s-cz)
 
-  module _
-         {R : A → A → Set}
-         (compose-R : ∀ {a b c}
-                    → R a b
-                    → R b c
-                    → R a c)
-         (let infixr 5 _⟫_; _⟫_ = compose-R)
-         (runQ : ∀ {a b}
-               → Q a b
-               → R a b)
-         (runFinal : ∀ {a b}
-                   → Final a b
-                   → R a b)
-         where
-    runSki
-      : ∀ {a z}
-      → Ski a z
-      → R a z
-    runSki (zero f-az)
-      = runFinal f-az
-    runSki (suc q-ab s-cz)
-      = runQ q-ab
-      ⟫ runSki s-cz
+module _
+       {R : A → A → Set}
+       (compose-R : ∀ {a b c}
+                  → R a b
+                  → R b c
+                  → R a c)
+       (let infixr 5 _⟫_; _⟫_ = compose-R)
+       (runQ : ∀ {a b}
+             → Q a b
+             → R a b)
+       (runFinal : ∀ {a b}
+                 → Final a b
+                 → R a b)
+       where
+  runSki
+    : ∀ {a z}
+    → Ski a z
+    → R a z
+  runSki (zero f-az)
+    = runFinal f-az
+  runSki (suc q-ab s-cz)
+    = runQ q-ab
+    ⟫ runSki s-cz
