@@ -57,32 +57,33 @@ module Category.Premonoidal.Symmetric.StringDiagram
                                     input
                                     (pre ++ leftover ++ post))
          where
-    propagate-Apply
-      : ∀ {a b z}
-      → Rearranging a b
-      → Apply b z
-      → ∃ λ b′
-      → Apply a b′
-      × Rearranging b′ z
-    propagate-Apply {a} .{b} .{output ++ leftover}
-                    r-ab
-                    (apply {b} {input} {output} {leftover} f-bil q)
-      = let leftover′ , f-bil′ , r-l′l = propagate-Focusing r-ab f-bil
+    private
+      propagate-Apply
+        : ∀ {a b z}
+        → Rearranging a b
+        → Apply b z
+        → ∃ λ b′
+        → Apply a b′
+        × Rearranging b′ z
+      propagate-Apply {a} .{b} .{output ++ leftover}
+                      r-ab
+                      (apply {b} {input} {output} {leftover} f-bil q)
+        = let leftover′ , f-bil′ , r-l′l = propagate-Focusing r-ab f-bil
 
-            b′ : List X
-            b′ = output ++ leftover′
+              b′ : List X
+              b′ = output ++ leftover′
 
-            z : List X
-            z = output ++ leftover
+              z : List X
+              z = output ++ leftover
 
-            prf : ∀ xs → output ++ xs ++ [] ≡ output ++ xs
-            prf _ = solve (++-monoid X)
+              prf : ∀ xs → output ++ xs ++ [] ≡ output ++ xs
+              prf _ = solve (++-monoid X)
 
-            r-b′z : Rearranging b′ z
-            r-b′z = subst (λ – → Rearranging (output ++ leftover′) –) (prf leftover)
-                  ( subst (λ – → Rearranging – _) (prf leftover′)
-                  ( widen-Rearranging output r-l′l []))
-        in b′ , apply f-bil′ q , r-b′z
+              r-b′z : Rearranging b′ z
+              r-b′z = subst (λ – → Rearranging (output ++ leftover′) –) (prf leftover)
+                    ( subst (λ – → Rearranging – _) (prf leftover′)
+                    ( widen-Rearranging output r-l′l []))
+          in b′ , apply f-bil′ q , r-b′z
 
     open Ski-Properties
       id-Rearranging

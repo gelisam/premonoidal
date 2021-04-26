@@ -32,16 +32,17 @@ module Ski-Properties
                     → Q a b′
                     × Final b′ c)
        where
-  propagate-Ski
-    : ∀ {a b z}
-    → Final a b
-    → Ski b z
-    → Ski a z
-  propagate-Ski f-ab (zero f-bz)
-    = zero (compose-Final f-ab f-bz)
-  propagate-Ski f-ab (suc q-bc s-cz)
-    = let _ , q-ab′ , f-b′c = propagate-Q f-ab q-bc
-      in suc q-ab′ (propagate-Ski f-b′c s-cz)
+  private
+    propagate-Ski
+      : ∀ {a b z}
+      → Final a b
+      → Ski b z
+      → Ski a z
+    propagate-Ski f-ab (zero f-bz)
+      = zero (compose-Final f-ab f-bz)
+    propagate-Ski f-ab (suc q-bc s-cz)
+      = let _ , q-ab′ , f-b′c = propagate-Q f-ab q-bc
+        in suc q-ab′ (propagate-Ski f-b′c s-cz)
 
   id-Ski
     : ∀ {a}
