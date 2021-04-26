@@ -10,9 +10,7 @@ open import Tactic.MonoidSolver using (solve)
 module Category.Premonoidal.Symmetric.StringDiagram
        {X : Set}
        (Q : List X → List X → Set)
-       {Leftover : Set}
        (Focusing : List X → List X → List X → Set)
-       (defocus : List X → List X → List X)
        where
   data Apply : List X → List X → Set where
     apply
