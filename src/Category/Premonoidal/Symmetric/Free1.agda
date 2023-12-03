@@ -1,4 +1,7 @@
-module Category.Premonoidal.Symmetric.Free where
+-- One approach to free symmetric premonoidal categories.
+-- One downside of this approach is that 'Rearrange's change a lot when
+-- composing two 'Free's.
+module Category.Premonoidal.Symmetric.Free1 where
 
 open import Data.Nat
 open import Data.List
